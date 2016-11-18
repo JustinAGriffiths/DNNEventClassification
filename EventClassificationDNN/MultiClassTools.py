@@ -4,6 +4,7 @@ from keras.utils import np_utils
 
 def shuffle_in_unison_inplace(a, b):
     assert len(a) == len(b)
+    np.random.seed(1234)
     p = np.random.permutation(len(a))
     return a[p], b[p]
 
