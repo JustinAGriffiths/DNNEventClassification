@@ -84,7 +84,8 @@ Config={
     "Momentum":0.,
     "Nesterov":0.,
 
-    "WeightInitialization":"'normal'"
+    "WeightInitialization":"'normal'",
+    "NormMethod":'"MinMax"'
 }
 
 Params={ "Width":[128],

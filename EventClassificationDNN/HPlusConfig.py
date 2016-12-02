@@ -16,11 +16,12 @@ Samples=[
 ]
 
 FieldGroups = [    
-    ['tau_0_pt', 'met_et'],
-    ['tau_0_phi', 'met_phi'],
+    ['tau_0_pt', 'met_et', 'ljet_0_pt',  'ljet_1_pt', 'bjet_0_pt'],
+    ['tau_0_phi', 'met_phi', 'tau_0_eta', 'ljet_0_eta', 'ljet_0_phi', 'ljet_1_eta', 'ljet_1_phi', 'bjet_0_eta', 'bjet_0_phi'],
 ]
 
 SelectedFields = [
+    #populate the variables here that you want to train on
     ['tau_0_pt', 'met_et', 'tau_0_phi', 'met_phi'],    
 ]
 
@@ -30,8 +31,10 @@ Name="EventClassificationDNN"
 
 Config={
 
-    "MaxEvents":50000,
-    "Epochs":100,
+    "MaxEvents":-1,
+    "Epochs":4000, # -1 only quit when StopVal reached (not really implmented the -1 case, just setting to 1234567890)
+    "NEpochsPerTrain":100, #Test for incremental improvements each NEpochs (-1 for one batch)
+    "StopVal":1e-2, #quit training condition (if delta<StopVal, quit. set to -1 to ignore stopval)
     "BatchSize":2048*8,
     
     "LearningRate":0.005,
@@ -40,7 +43,8 @@ Config={
     "Momentum":0.,
     "Nesterov":0.,
 
-    "WeightInitialization":"'normal'"
+    "WeightInitialization":"'normal'",
+    "NormMethod":'"MinMax"',
 }
 
 Params={ "Width":[128],
@@ -48,6 +52,70 @@ Params={ "Width":[128],
          "loss":[#"'mean_squared_error'",  
                  '"categorical_crossentropy"'],
          }
+
+def CustomNormFunc( FieldGroups, Train_X, Test_X, normalization_dict=None ) :
+    print 'In custom norm function'
+
+    GroupMins=[0]*len(FieldGroups)
+    GroupMaxs=[0]*len(FieldGroups)
+
+    if normalization_dict is None :
+        normalization_dict = {}
+    
+        for Fs in xrange(0,len(FieldGroups)):
+            Mins=[]
+            Maxs=[]
+            Means=[]
+            Stds=[]
+            for varI in xrange(0,len(FieldGroups[Fs])):
+                Mins+=[np.min(Train_X[FieldGroups[Fs][varI]])]
+                Maxs+=[np.max(Train_X[FieldGroups[Fs][varI]])]
+                Means+=[np.average(Train_X[FieldGroups[Fs][varI]])]
+                Stds+=[np.std(Train_X[FieldGroups[Fs][varI]])]
+                continue
+            for ival in xrange(0, len(Mins)):
+                Mins[ival] = max(Mins[ival], Means[ival]-3*Stds[ival] )
+                Maxs[ival] = min(Maxs[ival], Means[ival]+3*Stds[ival] )
+                pass
+            GroupMins[Fs]=min(Mins)
+            GroupMaxs[Fs]=max(Maxs)
+
+            
+            normalization_dict[Fs] = [min(Mins), max(Maxs)]
+            continue
+        print 'normalization_dict: ', normalization_dict
+        pass    
+    else :
+        print 'Loading previous normalization_dict'
+        print 'normalization_dict: ', normalization_dict
+        pass
+    
+    for Fs in xrange(0, len(FieldGroups)):
+        for var in FieldGroups[Fs]:
+            yy=Train_X[var]
+            yy[:]= 1./(normalization_dict[Fs][1]-normalization_dict[Fs][0]) * (yy-normalization_dict[Fs][0])
+
+            yy1=Test_X[var]
+            yy1[:]= 1./(normalization_dict[Fs][1]-normalization_dict[Fs][0])* (yy1-normalization_dict[Fs][0])
+            
+            continue
+        continue    
+    
+    return normalization_dict
+
+def CustomSkimFunction(Train_X, Train_Y):
+
+    skim_list_greater=[ ['tau_0_pt', 40000],
+                        ['met_et', 100000],
+                        ['n_jets', 2], ]
+
+    row_keeps = np.array([True]*len(Train_X))
+    for item in skim_list_greater :
+        row_keeps*=(Train_X[item[0]] > item[1])
+        
+        continue    
+    return Train_X[row_keeps], Train_Y[row_keeps]
+    
 
 PS=Permutator(Params)
 Combos=PS.Permutations()

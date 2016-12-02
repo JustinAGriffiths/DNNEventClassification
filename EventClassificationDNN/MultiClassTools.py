@@ -3,12 +3,14 @@ import h5py
 from keras.utils import np_utils
 
 def shuffle_in_unison_inplace(a, b):
+    print 'Shuffling'
     assert len(a) == len(b)
     np.random.seed(1234)
     p = np.random.permutation(len(a))
     return a[p], b[p]
-
-def LoadData(Samples, FractionTest=.1, MaxEvents=-1, MinEvents=-1):
+    #return a, b
+    
+def LoadData(Samples, FractionTest=.1, MaxEvents=-1, MinEvents=-1, doshuffle=True):
     FHandles={}
     Data={}
     ClassIndex={}
@@ -101,11 +103,12 @@ def LoadData(Samples, FractionTest=.1, MaxEvents=-1, MinEvents=-1):
             First=False        
 
         # Random Shuffle
-     
-    Train_X,Train_Y=shuffle_in_unison_inplace(Train_X,Train_Y)
-    Test_X,Test_Y=shuffle_in_unison_inplace(Test_X,Test_Y)
+
+    if doshuffle :
+        Train_X,Train_Y=shuffle_in_unison_inplace(Train_X,Train_Y)
+        Test_X,Test_Y=shuffle_in_unison_inplace(Test_X,Test_Y)
         
-    Train_Y= np_utils.to_categorical(Train_Y)
+    if doshuffle : Train_Y= np_utils.to_categorical(Train_Y)
     Test_Y= np_utils.to_categorical(Test_Y)
 
     return (Train_X, Train_Y), (Test_X, Test_Y), ClassIndex

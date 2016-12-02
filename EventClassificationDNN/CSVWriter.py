@@ -19,7 +19,8 @@ def CSVWriter(filename,X,Y,R):
     f = open(filename, 'w')
     f.write(colnames[:-1]+"\n")
 
-    X0=X.view(np.float32).reshape(X.shape + (-1,))
+    #X0=X.view(np.float32).reshape(X.shape + (-1,))
+    X0=X.view(np.float).reshape(X.shape + (-1,))
 
     YI=np.nonzero(Y)[1]
     out=np.concatenate((X0,Y,R),axis=1)

@@ -36,6 +36,18 @@ def ClassificationAnalysis(MyModel,Test_X,Test_Y,BatchSize, SignalClassIndex=5):
 
 mpColors=["blue","green","red","cyan","magenta","yellow","black","white"]
 
+def AUC(MyModel,Test_X,Test_Y,BatchSize):
+    from sklearn.metrics import roc_curve, auc    
+    result = MyModel.Model.predict(Test_X, batch_size=BatchSize)
+    NClasses=Test_Y.shape[1]
+    result = MyModel.Model.predict(Test_X, batch_size=BatchSize)
+    for ClassIndex in xrange(0,NClasses):
+        fpr, tpr, _ = roc_curve(Test_Y[:,ClassIndex], 
+                                result[:,ClassIndex])
+        roc_auc = auc(fpr, tpr)    
+        continue
+    return roc_auc
+
 def MultiClassificationAnalysis(MyModel,Test_X,Test_Y,BatchSize):
     import matplotlib as mpl
     mpl.use('pdf')
@@ -49,6 +61,8 @@ def MultiClassificationAnalysis(MyModel,Test_X,Test_Y,BatchSize):
     NClasses=Test_Y.shape[1]
 
     for ClassIndex in xrange(0,NClasses):
+        print 'A, ', Test_Y[:ClassIndex]
+        print 'B, ', result[:,ClassIndex]
         fpr, tpr, _ = roc_curve(Test_Y[:,ClassIndex], 
                                 result[:,ClassIndex])
         roc_auc = auc(fpr, tpr)    
